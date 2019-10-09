@@ -13,21 +13,30 @@ Date: 10/8/2019
 
 This is the configuration file for the Sharer Web Application. 
 Based off the HonestRepair Diablo Engine.
+
+This file was meant to be "included()" or "required()" by ShareCore.php.
+This file does not output anything to the user.
+If you lose this file you will be unable to decode session ID's and file keys later.
+
+!!! MAKE BACKUP COPIES OF THIS FILE !!!
 */
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
 // / The version of this application.
-$shareVersion = 'v0.5';
+// / Must be a string surrounded with single quotes.
+$ShareVersion = 'v0.6';
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
 // / Specify the name of the application as displayed by its various UI elements.
-$applicationName = "Sharer";
+// / Must be a string surrounded with single quotes.
+$ApplicationName = 'Sharer';
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
-// / Enable verbose logging.
+// / Set to "TRUE" to enable verbose logging.
+// / Set to "FALSE" to disable verbose logging.
 $Verbose = TRUE;
 // / ----------------------------------------------------------------------------------
 
@@ -40,7 +49,15 @@ $DeleteThreshold = 30;
 // / ----------------------------------------------------------------------------------
 // / A setting to enable or diable "Maintenance Mode" for temporarily disabling the application.
 // / Set to "TRUE" to prevent this application from running.
+// / Set to "FALSE" to allow this application to run.
 $MaintenanceMode = FALSE;
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
+// / Require that a user login with assigned credentials to upload or download files.
+// / Set to "TRUE" to force a login screen before any operations can be completed.
+// / Set to "FALSE" to allow anonymous usage.
+$AuthenticationRequired = TRUE;
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -75,8 +92,8 @@ $Users = array(
 // / ----------------------------------------------------------------------------------
 // / Directory declarations.
 // / No trailing slash!!!
-// /Specify the location where temporary shared data will be stored until it has been requested.
-$StoreLoc = '/ShareLoc';
+// / Specify the location where temporary shared data will be stored until it has been requested.
+$ShareLoc = '/ShareLoc';
 // / Specify the location where this application has been installed.
 // / Must be hosted!!!
 $InstLoc = '/var/www/html/HRProprietary/Sharer';

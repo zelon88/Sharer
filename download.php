@@ -13,5 +13,12 @@ Date: 10/8/2019
 
 This is the downloader UI file for the Sharer Web Application. 
 Based off the HonestRepair Diablo Engine.
+
+This file was meant to be "included()" or "required()" by ShareCore.php.
+
+The <!DOCTYPE HTML> and <html> opening tags are located at the top of ScanCore.php.
+The opening <html> tags, <meta> tags, <head> tags, scripts & stylesheets are located in header.php.
+The closing </html> tags are located in footer.php.
+The upload.php and download.php files are meant to output the body of this HTML application.
 */
 // / ----------------------------------------------------------------------------------
