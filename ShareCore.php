@@ -115,7 +115,7 @@ function verifyDate() {
 // / A function to generate and validate the operational environment for the Diablo Engine.
 function verifyInstallation() { 
   // / Set variables. 
-  global $Date, $Time, $Salts;
+  global $Date, $Time, $Salts, $EncryptionType;
   $dirCheck = $indexCheck = $dirExists = $indexExists = $logCheck = $cacheCheck = $shareLocCheck = TRUE;
   $requiredDirs = array('Logs', 'Cache', 'Temp');
   $InstallationIsVerified = FALSE;
@@ -134,21 +134,24 @@ function verifyInstallation() {
   // / Check that the $ShareLoc exists.
   if (!file_exists($ShareLoc)) $shareLocCheck = FALSE;
   // / Create a unique identifier for today's $LogFile.
-  $logHash = substr(hash('sha256', $Salts[0].hash('sha256', $Date.$Salts[1].$Salts[2].$Salts[3])), 0, 7);
+  $logHash = substr(hash($EncryptionType, $Salts[0].hash($EncryptionType, $Date.$Salts[1].$Salts[2].$Salts[3])), 0, 7);
   // / Define today's $LogFile.
-  $LogFile = 'Logs'.DIRECTORY_SEPARATOR.$Date.'_'.$logHash.'.log';
+  $logDir = 'Logs'.DIRECTORY_SEPARATOR.$Date.DIRECTORY_SEPARATOR;
+  if (!is_dir($logDir)) $logDirCheck = @mkdir($logDir);
+  $LogFile = $logDir.$ApplicationName.'_'.$logHash.'.log';
+  $VirusLogFile = $logDir.'_'$ApplicationName.'_ClamAV'.$logHash.'.log';
   // / Create today's $LogFile if it doesn't exist yet.
   if (!file_exists($LogFile)) $logCheck = file_put_contents($LogFile, 'OP-Act: '.$Time.' Created a log file, "'.$LogFile.'".');
   // / Create a unique identifier for the cache file.
-  $CacheFile = 'Cache'.DIRECTORY_SEPARATOR.'Cache-'.hash('sha256',$Salts[0].'CACHE').'.php';
+  $CacheFile = 'Cache'.DIRECTORY_SEPARATOR.'Cache-'.hash($EncryptionType,$Salts[0].'CACHE').'.php';
   // / If no cache file exists yet (first run) we create one and write the $PostConfigUsers to it. 
   if (!file_exists($CacheFile)) $cacheCheck = file_put_contents($CacheFile, '<?php'.PHP_EOL.'$PostConfigUsers = array();');
   // / Make sure all sanity checks passed.
-  if ($dirCheck && $indexCheck && $logCheck && $cacheCheck && $shareLocCheck) $InstallationIsVerified = TRUE;
+  if ($dirCheck && $logDirCheck && $indexCheck && $logCheck && $cacheCheck && $shareLocCheck) $InstallationIsVerified = TRUE;
   // / Clean up unneeded memory.
-  $dirCheck = $indexCheck = $logCheck = $cacheCheck = $requiredDirs = $requiredDir = $dirExists = $indexExists = $logHash = $shareLocCheck = NULL;
-  unset($dirCheck, $indexCheck, $logCheck, $cacheCheck, $requiredDirs, $requiredDir, $dirExists, $indexExists, $logHash, $shareLocCheck);
-  return(array($LogFile, $CacheFile, $InstallationIsVerified)); }
+  $dirCheck = $indexCheck = $logCheck = $cacheCheck = $requiredDirs = $requiredDir = $dirExists = $indexExists = $logHash = $shareLocCheck = $logDir = $logDirCheck = NULL;
+  unset($dirCheck, $indexCheck, $logCheck, $cacheCheck, $requiredDirs, $requiredDir, $dirExists, $indexExists, $logHash, $shareLocCheck, $logDir, $logDirCheck);
+  return(array($LogFile, $VirusLogFile, $CacheFile, $InstallationIsVerified)); }
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -197,14 +200,14 @@ function loadCache() {
 // / A function to validate and sanitize requried session and POST variables.
 function verifyGlobals() { 
   // / Set variables. 
-  global $Salts, $Data;
+  global $Salts, $EncryptionType;
   $GlobalsAreVerified = FALSE;
   $saniString = '|\\/~#[](){};:$!#^&%@>*<"\'';
   // / Set authentication credentials from supplied inputs when inputs are supplied.
   if (isset($_POST['UserInput']) && isset($_POST['PasswordInput']) && isset($_POST['ClientTokenInput'])) { 
     $_SESSION['UserInput'] = $UserInput = str_replace(str_split($saniString), ' ', $_POST['UserInput']), ENT_QUOTES, 'UTF-8');
     $_SESSION['PasswordInput'] = $PasswordInput = str_replace(str_split($saniString), ' ', $_POST['PasswordInput']), ENT_QUOTES, 'UTF-8'); 
-    $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash('sha256', $_POST['ClientTokenInput']), ENT_QUOTES, 'UTF-8');
+    $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash($EncryptionType, $_POST['ClientTokenInput']), ENT_QUOTES, 'UTF-8');
     $_SESSION['Mode'] = str_replace(str_split($saniString), ' ', $_POST['Mode']), ENT_QUOTES, 'UTF-8'); }
   // / Detect if required variables are set.
   $GlobalsAreVerified = TRUE;
@@ -230,13 +233,13 @@ function requireLogin() {
 // / But no lock is pick proof, especially ones that come with instructions for picking them.
 function generateTokens($ClientTokenInput, $PasswordInput) { 
   // / Set variables. 
-  global $Minute, $LastMinute;
+  global $Minute, $LastMinute, $EncryptionType;
   $ServerToken = $ClientToken = NULL;
   $TokensAreValid = FALSE;
-  $ServerToken = hash('sha256', $Minute.$Salts[1].$Salts[3]);
-  $CLientToken = hash('sha256', $Minute.$PasswordInput); 
-  $oldServerToken = hash('sha256', $LastMinute.$Salts[1].$Salts[3]);
-  $oldCLientToken = hash('sha256', $LastMinute.$PasswordInput);
+  $ServerToken = hash($EncryptionType, $Minute.$Salts[1].$Salts[3]);
+  $ClientToken = hash($EncryptionType, $Minute.$PasswordInput); 
+  $oldServerToken = hash($EncryptionType, $LastMinute.$Salts[1].$Salts[3]);
+  $oldCLientToken = hash($EncryptionType, $LastMinute.$PasswordInput);
   if ($ClientTokenInput === $oldClientToken) {
     $ClientToken = $oldClientToken;
     $ServerToken = $oldServerToken; }
@@ -252,7 +255,7 @@ function generateTokens($ClientTokenInput, $PasswordInput) {
 function authenticate($UserInput, $PasswordInput, $ServerToken, $ClientToken) { 
   // / Set variables. Note that we try not to include anything here we don't have to because
   // / It's going to be hammered by someone, somewhere, eventually. Less is more in terms of code & security.
-  global $Users;
+  global $Users, $EncryptionType;
   $UserID = $UserName = $PasswordIsCorrect = $UserIsAdmin = $AuthIsComplete = FALSE;
   // / Iterate through each defined user.
   foreach ($Users as $User) { 
@@ -261,7 +264,7 @@ function authenticate($UserInput, $PasswordInput, $ServerToken, $ClientToken) {
     if ($User[1] === $UserInput) { 
       $UserName = $User[1];
       // / Continue ONLY if all tokens match and the password hash is correct.
-      if (hash('sha256', $ServerToken.hash('sha256', $ClientToken.$User[3])) === hash('sh256', $ServerToken.hash('sha256', $Salts[0].$PasswordInput.$Salts[0].$Salts[1].$Salts[2].$Salts[3]))) { 
+      if (hash($EncryptionType, $ServerToken.hash($EncryptionType, $ClientToken.$User[3])) === hash($EncryptionType, $ServerToken.hash($EncryptionType, $Salts[0].$PasswordInput.$Salts[0].$Salts[1].$Salts[2].$Salts[3]))) { 
         $PasswordIsCorrect = TRUE; 
         // / Here we grant the user their designated permissions and only then decide $AuthIsComplete.
         if (is_bool($User[4])) {
@@ -305,16 +308,48 @@ function cleanFolders($dTarget, $DeleteThreshold) {
   return ($DirectoriesAreClean); }
 // / ----------------------------------------------------------------------------------
 
+// / ----------------------------------------------------------------------------------
+// / A function to scan a supplied file for viruses with ClamAV using settings obtained from config.php.
+// / Requires ClamAV to be installed on the server.
+function VirusScan($file) { 
+  // / Set variables. Initialize check to FALSE.
+  global $ThoroughAV, $VirusLogFile;
+  $virusCheck = FALSE;
+  // / Execute ClamAV on the target $file with $ThroughputAV settings from config.php and only output findings to the $VirusLogFile.
+  // / Prepend the findings with "FOUND" so we have something easy to search for later to quantify results. 
+  shell_exec(str_replace('  ', ' ', str_replace('  ', ' ', 'clamscan -r '.$ThoroughAV.' '.$file.' | grep FOUND >> '.$VirusLogFile)));
+  // / Check that a logfile was created and read it if possible.
+  if (file_exists($VirusLogFile);) { 
+    $logFileDATA = @file_get_contents($VirusLogFile);
+    // / Look for IoC in the logfile. Trigger the check TRUE or FALSE as needed.
+    if ($strpos($logFileDATA, 'FOUND') !== FALSE) $virusCheck = FALSE; 
+    else $virusCheck = TRUE; }
+  // / Free un-needed memory.
+  $virusCheck = NULL;
+  unset($virusCheck);
+  return ($virusCheck);
+// / ----------------------------------------------------------------------------------
+
 // / -----------------------------------------------------------------------------------
 // / The following code is performed when a user initiates a file upload.
 // / $files should be set to $_FILES['fileUpload'].
 // / $fileKeys should be an array or CSV of keys that correspond to the $files array.
-// / $userIDs should be an array of arrays or CSVs that correspond to the users who should access each $file. 
+// / $userIDs should be an array of arrays or array of CSVs that correspond to the users who should access each $file. 
 function upload($files, $fileKeys, $userIDs) {
+  // / Set variables. Initialize internal checks to TRUE and the return check to FALSE.
+  global $ShareLoc, $VirusLogFile, $VirusScan, $ThoroughAV;
+  $UploadSuccess = FALSE;
+  $keysFileCheck = $fileCheck = $virusCheck = TRUE;
+  $DownloadURLs = array();
+
+
+
   if (!is_array($files['name'])) $files = array($files['name']);
   if (!is_array($fileKeys)) $fileKeys = array($fileKeys);
   if (!is_array($userIDs)) $userIDs = array($userIDs);
   foreach ($files as $key=>$file) {
+    // / Reset variables for this iteration of the loop.
+    $keysData = $url = '';
     // / Sanitize the input file for security.
     $file = Sanitize($file, FALSE);
     $fileKey = Sanitize($fileKeys[$key], TRUE);
@@ -325,50 +360,38 @@ function upload($files, $fileKeys, $userIDs) {
       // / $userIDs[$key] is controlled by the outer loop (above).
       if (!is_array($userIDs[$key])) $userIDs[$key] = array($userIDs[$key]);
       // / $userID is a handle for $userIDs[$key][$uKey]. It is a single user of the selected file.
-      foreach ($userIDs[$key] as $uKey=>$userID) $userIDs[$key][$uKey] = Sanitize($userID, TRUE); }
+      foreach ($userIDs[$key] as $uKey=>$userID) $userIDs[$key][$uKey] = int(Sanitize($userID, TRUE)); }
     // / If $AuthenticationRequired is set to FALSE in config.php we ignore the $userIDs argument and substitute UserID 0 (Anonymous).
     else $userIDs = 0;
-    if ($file == '.' or $file == '..' or $file == 'index.html') continue;
-    foreach ($DangerousFiles as $DangerousFile) { 
-      if (strpos($file, $DangerousFile) !== FALSE) continue 2; }  
-    $file = htmlentities(str_replace('..', '', str_replace(str_split('\\/[]{};:$!#^&%@>*<'), '', $file)), ENT_QUOTES, 'UTF-8'); 
-    $F0 = pathinfo($file, PATHINFO_EXTENSION);
-    if (in_array($F0, $DangerousFiles)) { 
-      $txt = ("ERROR!!! HRC2103, Unsupported file format, $F0 on $Time.");
-      $MAKELogFile = file_put_contents($LogFile, $txt.PHP_EOL, FILE_APPEND);
-      echo($txt.$br.$hr); 
-      continue; }
-    $F2 = str_replace('..', '', str_replace('//', '/', str_replace('///', '/', pathinfo($file, PATHINFO_BASENAME))));
-    $F3 = str_replace('..', '', str_replace(str_split('()|&'), '', str_replace('//', '/', str_replace('///', '/', $CloudUsrDir.$F2))));
-    if($file == "") {
-      $txt = ("ERROR!!! HRC2160, No file specified on $Time.");
-      $MAKELogFile = file_put_contents($LogFile, $txt.PHP_EOL, FILE_APPEND); 
-      echo($txt.$br.$hr); 
-      continue; }
-    $COPY_TEMP = @copy($_FILES['filesToUpload']['tmp_name'][$key], $F3);
-    if (file_exists($F3)) { 
-      $txt = ('OP-Act: Uploaded '.$file.' to '.str_replace('//', '/', $Udir.'/'.$file).' on '.$Time.'.');
-      $MAKELogFile = file_put_contents($LogFile, $txt.PHP_EOL, FILE_APPEND);
-      echo($txt.$br.$hr); }
-    if (!file_exists($F3)) { 
-      $txt = ("ERROR!!! HRC289, Could not upload $F3 on $Time.");
-      $MAKELogFile = file_put_contents($LogFile, $txt.PHP_EOL, FILE_APPEND);
-      echo($txt.$br.$hr); }
-    @chmod($F3, $ILPerms); 
-    // / The following code checks the Cloud Location with ClamAV after copying, just in case.
-    if ($VirusScan == '1') {
-      shell_exec(str_replace('  ', ' ', str_replace('  ', ' ', 'clamscan -r '.$Thorough.' '.$F3.' | grep FOUND >> '.$ClamLogDir)));
-      $ClamLogFileDATA = @file_get_contents($ClamLogDir);
-      if (strpos($ClamLogFileDATA, 'Virus Detected') !== FALSE or strpos($ClamLogFileDATA, 'FOUND') !== FALSE) {
-        $txt = ('Warning!!! HRC2338, There were potentially infected files detected. The file
-          transfer could not be completed at this time. Please check your file for viruses or
-          try again later.');
-        $MAKELogFile = file_put_contents($LogFile, $txt.PHP_EOL, FILE_APPEND);          
-        @unlink($F3);
-        die($txt.$br.$hr); } } } 
+    // / Perform a sanity check on the input file.
+    if ($file == '.' or $file == '..' or strpos($file, '.php') !== FALSE or strpos($file, '.js') !== FALSE or strpos($file, '.html') !== FALSE) continue;
+    // / Remove duplicate directory separators.
+    $filePath = str_replace($dsds, $ds, $ShareLoc.$ds.$fileKey.$ds.$file);
+    $fileDataPath = str_replace($dsds, $ds, $ShareLoc.$ds.$fileKey.$ds.$file.'-KEYS.php');
+    // / Craft a relative URL for the selected file and add it to an array that we can return later.
+    $url = str_replace($dsds, $ds, 'Temp'.$ds.$fileKey.$ds.$file);
+    $DownloadURLs = array_push($DownloadURLs, $url);
+    // / Create a KEYS file containing the permissions settings for the selected file.
+    $keysData = '<?php $ApprovedUsers = array('.implode(','.$userIDs).');';
+    $keysFileCheck = @file_put_contents($fileDataPath, $keysData);
+    // / Copy the uploaded file to the $filePath (in the $ShareLoc).
+    $fileCheck = @copy($files['tmp_name'][$key], $filePath); }
+    // / If $VirusScan is set to TRUE in config.php we check the $filePath with ClamAV.
+    // / ClamAV is required for virus scanning!
+    if ($VirusScan) {
+      $virusCheck = VirusScan($file);
+      // / If viruses were found we delete all files that were created and stop processing the request.
+      if (!$virusCheck) {
+        @unlink($filePath);
+        @unlink($fileDataPath); 
+        $DownloadURLs = array(); 
+        break; } } 
+    // / Check that no errors have been triggered.
+    if ($virusCheck = $fileCheck && $keysFileCheck && file_exists($filePath)) $UploadSuccess = TRUE; 
   // / Free un-needed memory.
   $txt = $file = $F0 = $F2 = $F3 = $ClamLogFileDATA = $Upload = $MAKELogFile = NULL;
-  unset($txt, $file, $F0, $F2, $F3, $ClamLogFileDATA, $Upload, $MAKELogFile); } 
+  unset($txt, $file, $F0, $F2, $F3, $ClamLogFileDATA, $Upload, $MAKELogFile); 
+  return (array($DownloadURLs, $UploadSuccess)); } 
 // / -----------------------------------------------------------------------------------
 
 // / -----------------------------------------------------------------------------------
@@ -388,10 +411,14 @@ function download($files, $fileKeys, $userID) {
   $dsds = DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR;
   // / If $AuthenticationRequired is set to TRUE in config.php we convert $userID to an integer to ensure its validity.
   if ($AuthenticationRequired) $userID = int($userID);
+
+
+  
   // / This one-liner converts a string to an array so it runs in a loop. Strings only loop once.
   if (!is_array($files)) $files = array($files); 
   // / Iterate through the supplied array of files.
   foreach ($files as $key=>$file) {
+    // / Reset variables for this iteration of the loop.
     $AllowedUsers = array();
     $url = '';
     // / Sanitize the input file for security.
@@ -400,7 +427,7 @@ function download($files, $fileKeys, $userID) {
     // / Perform a sanity check on the input file.
     if ($file == '.' or $file == '..' or strpos($file, '.php') !== FALSE or strpos($file, '.js') !== FALSE or strpos($file, '.html') !== FALSE) continue;
     // / Remove duplicate directory separators.
-    $filePath = str_replace($dsds, $ds, $ShareLoc.$ds.$fileKey.$ds.$file);
+    $filePath = str_replace($dsds, $ds, $ShareLoc.$ds.$file.$Key.$ds.$file);
     $fileDataPath = str_replace($dsds, $ds, $ShareLoc.$ds.$fileKey.$ds.$file.'-KEYS.php');
     $fileTempPath - str_replace($dsds, $ds, $TempLoc.$ds.$fileKey.$ds.$file); 
     // / Check for the existence of a key file for the selected file.
@@ -455,7 +482,7 @@ if (phpCheck() && osCheck() && loadConfig()) {
 
   // / This code verifies the integrity of the application.
   // / Also generates required directories in case they are missing & creates required log & cache files.
-  list ($LogFile, $CacheFile, $InstallationIsVerified) = verifyInstallation();
+  list ($LogFile, $VirusLogFile, $CacheFile, $InstallationIsVerified) = verifyInstallation();
   if (!$InstallationIsVerified) dieGracefully(3, 'Could not verify installation!');
   else if ($Verbose) logEntry('Verified installation.');
 
@@ -487,8 +514,8 @@ if (phpCheck() && osCheck() && loadConfig()) {
   
   // / When the $AuthenticationRequired variable is set to FALSE in config.php this code block is run, bypassing authentication.
   if (!$AuthenticationRequired) { 
-    $ClientToken = hash('sha256', rand(10000000000).rand(10000000000));
-    $ServerToken = hash('sha256', rand(10000000000).rand(10000000000));
+    $ClientToken = hash($EncryptionType, rand(10000000000).rand(10000000000));
+    $ServerToken = hash($EncryptionType, rand(10000000000).rand(10000000000));
     $UserID = 0;
     $UserName = 'Anonymous';
     $UserEmail = 'Anonymous@anon.net';

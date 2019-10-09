@@ -23,9 +23,9 @@ If you lose this file you will be unable to decode session ID's and file keys la
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
-// / The version of this application.
+// / The version of this application. Must be a string.
 // / Must be a string surrounded with single quotes.
-$ShareVersion = 'v0.6';
+$ShareVersion = 'v0.7';
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -62,8 +62,8 @@ $AuthenticationRequired = TRUE;
 
 // / ----------------------------------------------------------------------------------
 // / Allow users without an account to create one on their own.
-// / Set to enabled to allow anonymous users to create new accounts.
-// / Set to false to prevent anonymous users from creating new accounts.
+// / Set to "TRUE" to allow anonymous users to create new accounts.
+// / Set to "FALSE" to prevent anonymous users from creating new accounts.
 $AllowUsers = TRUE;
 // / ----------------------------------------------------------------------------------
 
@@ -76,10 +76,32 @@ $Salts = array('fgdsfg!876524fsfawedrw234381234120', 'fgsdfgafcrtytruyuio[][\;lk
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
+// / Hashing algorithm. Must be a string.
+// / Set a valid hash algorithm for internal encryption.
+$EncryptionType = 'sha256';
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
+// / Enable virus scanning with ClamAV. If viruses are found the desired operation is rolled back.
+// / Requires ClamAV to be installed on the server.
+// / Set to "TRUE" to enable ClamAV virus scanning during uploads. 
+// / Set to "FALSE" to disable ClamAV virus scanning during uploads.
+$VirusScan = TRUE;
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
+// / Enable deep scanning. Takes longer, may require additional permissions setup. Reduces false-negatives.
+// / Default is "TRUE".
+// / Set to "TRUE" to enable thorough ClamAV scanning during uploads.
+// / Set to "FALSE" to disable thorough ClamAV scanning during uploads.
+$ThoroughAV = TRUE;
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
 // / Super Admin Users.
 // / Users are treated as objects. Users added here have global admin powers that cannot be changed via the GUI.
 // / Users added through the GUI after initial setup are contained in the cache.
-// / Arrays are formatted as  $Users['USER_ID', 'USER_NAME', 'USER_EMAIL', 'SHA-256_HASHED_PASSWORD', "ADMIN_YES/NO(bool)", "LAST_SESION_ID"]
+// / Arrays are formatted as  $Users['USER_ID', 'USER_NAME', 'USER_EMAIL', 'HASHED_PASSWORD', "ADMIN_YES/NO(bool)", "LAST_SESION_ID"]
 $Users = array(
  array('1', 'zelon88', 'test@gmail.com', 'testpassword', "TRUE"),
  array('2', 'Nikki', 'test@gmail.com', 'password', "FALSE") 
@@ -90,13 +112,36 @@ $Users = array(
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
-// / Directory declarations.
-// / No trailing slash!!!
 // / Specify the location where temporary shared data will be stored until it has been requested.
+// / Must be a string. No trailing slash!!!
+// / Must be readable and writable to the www-data user. 
+// /  Use.....
+// /    chown -R www-data:www-data /path/to/ShareLoc
+// /    chmod -R 0755 /path/to/ShareLoc
+// / Must NOT be hosted!!!
 $ShareLoc = '/ShareLoc';
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
 // / Specify the location where this application has been installed.
+// / Must be a string. No trailing slash!!!
+// / Must be readable and writable to the www-data user. 
+// /  Use.....
+// /    chown -R www-data:www-data /path/to/ShareLoc
+// /    chmod -R 0755 /path/to/ShareLoc
 // / Must be hosted!!!
+// / Default is  '/var/www/html/HRProprietary/Sharer'
 $InstLoc = '/var/www/html/HRProprietary/Sharer';
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
 // / Set the location where temporary shared data will be stored during download operations.
+// / Must be a string. No trailing slash!!!
+// / Must be readable and writable to the www-data user. 
+// /  Use.....
+// /    chown -R www-data:www-data /path/to/ShareLoc
+// /    chmod -R 0755 /path/to/ShareLoc
+// / Must be hosted!!!
+// / Default is  $InstLoc.DIRECTORY_SEPARATOR.'Temp'
 $TempLoc = $InstLoc.DIRECTORY_SEPARATOR.'Temp';
 // / ----------------------------------------------------------------------------------

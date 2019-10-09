@@ -1,0 +1,12 @@
+--------------------
+COMMIT 10/8/2019
+Justin Grimes - v0.7 - Added $EncryptionType config entry, changelog, uploader work, virus scanning.
+
+-v0.7.
+-Added changelog.
+-Added $EncryptionType variable to config.php for max adjustability.
+-Working on uploader/virus scanning.
+-Added virus scanning variables to config.php.
+-Added VirusScan() function.
+-Need to work on CSV and type conversion for a more friendly API. 
+--------------------
