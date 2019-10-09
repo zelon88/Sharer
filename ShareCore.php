@@ -76,8 +76,6 @@ function loadConfig() {
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
-// / The following code sets the functions for the session.
-
 // / A function for sanitizing input strings with varying degrees of tolerance.
 // / Filters a given string of | \ ~ # [ ] ( ) { } ; : $ ! # ^ & % @ > * < " / '
 // / This function will replace any of the above specified charcters with NOTHING. No character at all. An empty string.
@@ -413,7 +411,7 @@ function download($files, $fileKeys, $userID) {
   if ($AuthenticationRequired) $userID = int($userID);
 
 
-  
+
   // / This one-liner converts a string to an array so it runs in a loop. Strings only loop once.
   if (!is_array($files)) $files = array($files); 
   // / Iterate through the supplied array of files.
