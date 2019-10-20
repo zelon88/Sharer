@@ -38,6 +38,16 @@ set_time_limit(0);
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
+// / Determine if we need to prepare a DOCTYPE and open HTML tags for the session.
+function opCheck() { 
+  $DownloadRequired = $UploadRequired = FALSE;
+  $Doctype = '<!DOCTYPE HTML><HTML>';
+  if (isset($_POST['DownloadloadFiles'])) $Doctype = ''; $DownloadRequired = TRUE;
+  if (isset($_POST['UploadFiles'])) $Doctype = ''; $UploadRequired = TRUE;
+  return (array($Doctype, $DownloadRequired, $UploadRequired)); }
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
 // / Detemine the version of PHP in use to run the application.
 // / Any PHP version earlier than 7.0 IS STRICTLY NOT SUPPORTED!!!
 // / Specifically, PHP versions earlier than 7.0 require the list() functions used to be unserialized. 
@@ -71,16 +81,6 @@ function loadConfig() {
   $ConfigIsLoaded = TRUE; 
   if ($MaintenanceMode === TRUE) die('The requested application is currently unavailable due to maintenance.'.PHP_EOL); 
   return ($ConfigIsLoaded); }
-// / ----------------------------------------------------------------------------------
-
-// / ----------------------------------------------------------------------------------
-// / Determine if we need to prepare a DOCTYPE and open HTML tags for the session.
-function opCheck() { 
-  $DownloadRequired = $UploadRequired = FALSE;
-  $Doctype = '<!DOCTYPE HTML><HTML>';
-  if (isset($_POST['DownloadloadFiles'])) $Doctype = ''; $DownloadRequired = TRUE;
-  if (isset($_POST['UploadFiles'])) $Doctype = ''; $UploadRequired = TRUE;
-  return (array($Doctype, $DownloadRequired, $UploadRequired)); }
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -476,13 +476,14 @@ function download($files, $fileKeys, $userID) {
 // / ----------------------------------------------------------------------------------
 // / The main logic of the program which makes use of the functions above.
 
+// / Check if any file operations are required. 
+// / If we're being called upon asynchronously we won't build an entire HTML page.
+list ($Doctype, $DownloadRequired, $UploadRequired) = opCheck();
+echo $Doctype;
+
 // / Perform some basic environment checks before we start writing to the filesystem.
 // / Specifically we check that the PHP version is 7.0 or greater, the O/S is not Windows, & that the config file is readable.
 if (phpCheck() && osCheck() && loadConfig()) {
-  // / Check if any file operations are required. 
-  // / If we're being called upon asynchronously we won't build an entire HTML page.
-  list ($Doctype, $DownloadRequired, $UploadRequired) = opCheck();
-
   // / Set the time. $Minute and $LastMinute area used for token generation. 
   list ($Date, $Time, $Minute, $LastMinute) = verifyDate();
 
@@ -543,7 +544,6 @@ if (phpCheck() && osCheck() && loadConfig()) {
   // / If there are no file operations to perform we prepare a dynamic HTML UI for the user.
   else { 
     // / Dynamically build the UI depending on which functionality is desired.
-    echo $Doctype;
     require('header.php');
     if ($Mode == 'UPLOAD') require('upload.php'); 
     if ($Mode == 'DOWNLOAD') require('download.php');
