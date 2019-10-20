@@ -1,4 +1,15 @@
 --------------------
+COMMIT 10/20/2019
+Justin Grimes - v0.8 - Working on Upload/Download logic. Early UI development.
+
+-v0.8.
+-Continuing to work on Uploading/Downloading functionality.
+-Also starting to tie the UI into the overall application.
+-Added opCheck() function for determining if a UI is even neccesary for the desired operation.
+-Starting to tweak existing design to be more async friendly.
+--------------------
+
+--------------------
 COMMIT 10/8/2019
 Justin Grimes - v0.7 - Added $EncryptionType config entry, changelog, uploader work, virus scanning.
 

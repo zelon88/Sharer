@@ -1,5 +1,3 @@
-<!DOCTYPE HTML>
-<html>
 <?php
 /*
 HonestRepair Diablo Engine  -  Sharer
@@ -10,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/8/2019
+Date: 10/20/2019
 <3 Open-Source
 
 This is the primary Core file for the Sharer Web Application. 
@@ -76,12 +74,22 @@ function loadConfig() {
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
+// / Determine if we need to prepare a DOCTYPE and open HTML tags for the session.
+function opCheck() { 
+  $DownloadRequired = $UploadRequired = FALSE;
+  $Doctype = '<!DOCTYPE HTML><HTML>';
+  if (isset($_POST['DownloadloadFiles'])) $Doctype = ''; $DownloadRequired = TRUE;
+  if (isset($_POST['UploadFiles'])) $Doctype = ''; $UploadRequired = TRUE;
+  return (array($Doctype, $DownloadRequired, $UploadRequired)); }
+// / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
 // / A function for sanitizing input strings with varying degrees of tolerance.
 // / Filters a given string of | \ ~ # [ ] ( ) { } ; : $ ! # ^ & % @ > * < " / '
 // / This function will replace any of the above specified charcters with NOTHING. No character at all. An empty string.
 // / Set $strict to TRUE to also filter out backslash characters as well. Example:  /
 function sanitize($Variable, $Strict) { 
-  // / Set variables.  
+  // / Set variables.
   $VariableIsSanitized = TRUE;
   // / Check for proper input types before trusting user influenced variables. 
   if (!is_bool($Strict)) $Strict = TRUE; 
@@ -206,13 +214,15 @@ function verifyGlobals() {
     $_SESSION['UserInput'] = $UserInput = str_replace(str_split($saniString), ' ', $_POST['UserInput']), ENT_QUOTES, 'UTF-8');
     $_SESSION['PasswordInput'] = $PasswordInput = str_replace(str_split($saniString), ' ', $_POST['PasswordInput']), ENT_QUOTES, 'UTF-8'); 
     $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash($EncryptionType, $_POST['ClientTokenInput']), ENT_QUOTES, 'UTF-8');
-    $_SESSION['Mode'] = str_replace(str_split($saniString), ' ', $_POST['Mode']), ENT_QUOTES, 'UTF-8'); }
+    $_SESSION['Mode'] = $Mode = str_replace(str_split($saniString), ' ', $_POST['Mode']), ENT_QUOTES, 'UTF-8'); 
+    $_SESSION['FileKeysInput'] = $FileKeysInput = str_replace(str_split($saniString), ' ', $_POST['FileKeysInput']), ENT_QUOTES, 'UTF-8');
+    $_SESSION['ApprovedUserIDInput'] = $ApprovedUserIDInput = str_replace(str_split($saniString), ' ', $_POST['ApprovedUserIDInput']), ENT_QUOTES, 'UTF-8'); }
   // / Detect if required variables are set.
   $GlobalsAreVerified = TRUE;
   // / Clean up unneeded memory.
   $saniString = NULL;
   unset($saniString);
-  return($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $GlobalsAreVerified); }
+  return($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $FileKeys, $GlobalsAreVerified); }
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -339,9 +349,6 @@ function upload($files, $fileKeys, $userIDs) {
   $UploadSuccess = FALSE;
   $keysFileCheck = $fileCheck = $virusCheck = TRUE;
   $DownloadURLs = array();
-
-
-
   if (!is_array($files['name'])) $files = array($files['name']);
   if (!is_array($fileKeys)) $fileKeys = array($fileKeys);
   if (!is_array($userIDs)) $userIDs = array($userIDs);
@@ -385,7 +392,7 @@ function upload($files, $fileKeys, $userIDs) {
         $DownloadURLs = array(); 
         break; } } 
     // / Check that no errors have been triggered.
-    if ($virusCheck = $fileCheck && $keysFileCheck && file_exists($filePath)) $UploadSuccess = TRUE; 
+    if ($virusCheck && $fileCheck && $keysFileCheck && file_exists($filePath)) $UploadSuccess = TRUE; 
   // / Free un-needed memory.
   $txt = $file = $F0 = $F2 = $F3 = $ClamLogFileDATA = $Upload = $MAKELogFile = NULL;
   unset($txt, $file, $F0, $F2, $F3, $ClamLogFileDATA, $Upload, $MAKELogFile); 
@@ -409,9 +416,6 @@ function download($files, $fileKeys, $userID) {
   $dsds = DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR;
   // / If $AuthenticationRequired is set to TRUE in config.php we convert $userID to an integer to ensure its validity.
   if ($AuthenticationRequired) $userID = int($userID);
-
-
-
   // / This one-liner converts a string to an array so it runs in a loop. Strings only loop once.
   if (!is_array($files)) $files = array($files); 
   // / Iterate through the supplied array of files.
@@ -475,8 +479,12 @@ function download($files, $fileKeys, $userID) {
 // / Perform some basic environment checks before we start writing to the filesystem.
 // / Specifically we check that the PHP version is 7.0 or greater, the O/S is not Windows, & that the config file is readable.
 if (phpCheck() && osCheck() && loadConfig()) {
+  // / Check if any file operations are required. 
+  // / If we're being called upon asynchronously we won't build an entire HTML page.
+  list ($Doctype, $DownloadRequired, $UploadRequired) = opCheck();
+
   // / Set the time. $Minute and $LastMinute area used for token generation. 
-  list($Date, $Time, $Minute, $LastMinute) = verifyDate();
+  list ($Date, $Time, $Minute, $LastMinute) = verifyDate();
 
   // / This code verifies the integrity of the application.
   // / Also generates required directories in case they are missing & creates required log & cache files.
@@ -493,7 +501,7 @@ if (phpCheck() && osCheck() && loadConfig()) {
   if ($AuthenticationRequired) { 
     // / This code takes in all required inputs to build a session and ensures they exist & are a valid type.
     // / Also displays the login page when the user is not logged in.
-    list ($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $GlobalsAreVerified) = verifyGlobals();
+    list ($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $FileKeysInput, $GlobalsAreVerified) = verifyGlobals();
     if (!$GlobalsAreVerified) requireLogin(); dieGracefully(5, 'User is not logged in!');
     else if ($Verbose) logEntry('Verified global variables.');
 
@@ -519,13 +527,27 @@ if (phpCheck() && osCheck() && loadConfig()) {
     $UserEmail = 'Anonymous@anon.net';
     $UserIsAdmin = FALSE; }
 
+  // / If a Download operation is required we don't output a UI. Instead we ouput the download URL's for the requested files.
+  if ($DownloadRequired or $UploadRequired) { 
+    if ($DownloadRequired) { 
+      list ($DownloadURLs, $DownloadSuccess) = download($_POST['DownloadFiles'], $FileKeysInput, $UserID);
+      if (!$DownloadSuccess) dieGracefully(7, 'Download Error!');
+      else if ($Verbose) logEntry('Download URL Generated.'); }
 
+    // / If an Upload operation is required we don't output a UI. Instead we ouput the download URL's for the uploaded files.
+    if ($UploadRequired) { 
+      list ($DownloadURLs, $UploadSuccess) = upload($_POST['UploadFiles'], $FileKeysInput, $ApprovedUserIDInput); }
+      if (!$UploadSuccess) dieGracefully(8, 'Upload Error!');
+      else if ($Verbose) logEntry('Upload Complete.'); }
 
-  // / Dynamically build the UI depending on which functionality is desired.
-  require('header.php');
-  if (isset(Sanitize($_POST['Mode'], TRUE) == 'UPLOAD') require('upload.php'); 
-  if (isset(Sanitize($_POST['Mode'], TRUE) == 'DOWNLOAD') require('download.php');
-  require('footer.php');
+  // / If there are no file operations to perform we prepare a dynamic HTML UI for the user.
+  else { 
+    // / Dynamically build the UI depending on which functionality is desired.
+    echo $Doctype;
+    require('header.php');
+    if ($Mode == 'UPLOAD') require('upload.php'); 
+    if ($Mode == 'DOWNLOAD') require('download.php');
+    require('footer.php');
 
-}
+} }
 // / ----------------------------------------------------------------------------------

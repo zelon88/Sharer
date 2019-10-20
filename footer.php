@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/8/2019
+Date: 10/20/2019
 <3 Open-Source
 
 This is the footer UI file for the Sharer Web Application. 

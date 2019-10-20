@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/8/2019
+Date: 10/20/2019
 <3 Open-Source
 
 This is the header UI file for the Sharer Web Application. 
@@ -22,6 +22,7 @@ The closing </html> tags are located in footer.php.
 The upload.php and download.php files are meant to output the body of this HTML application.
 */
 if (!isset($ApplicationName)) $ApplicationName = 'Sharer';
+if (!isset($Doctype)) $ApplicationName = '<!DOCTYPE HTML><HTML>';
 // / ----------------------------------------------------------------------------------
 ?>
 

@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/8/2019
+Date: 10/20/2019
 <3 Open-Source
 
 This is the configuration file for the Sharer Web Application. 
@@ -25,7 +25,7 @@ If you lose this file you will be unable to decode session ID's and file keys la
 // / ----------------------------------------------------------------------------------
 // / The version of this application. Must be a string.
 // / Must be a string surrounded with single quotes.
-$ShareVersion = 'v0.7';
+$ShareVersion = 'v0.8';
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------

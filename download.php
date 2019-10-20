@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/8/2019
+Date: 10/20/2019
 <3 Open-Source
 
 This is the downloader UI file for the Sharer Web Application. 
@@ -22,3 +22,25 @@ The closing </html> tags are located in footer.php.
 The upload.php and download.php files are meant to output the body of this HTML application.
 */
 // / ----------------------------------------------------------------------------------
+
+// / ----------------------------------------------------------------------------------
+// / Set some variables to pre-populate the form fields with.
+if (isset($_SESSION['UserIDInput'])) $UIDI = $_SESSION['UserIDInput'];
+else $UIDI = '';
+if (isset($_SESSION['PasswordInput'])) $PI = $_SESSION['PasswordInput'];
+else $PI = '';
+if (isset($_SESSION['Mode'])) $MI = $_SESSION['Mode'];
+else $MI = 'DOWNLOAD';
+// / ----------------------------------------------------------------------------------
+
+?>
+
+<form enctype="multipart/form-data" method="Post" action="ShareCore.php">
+  <input type="text" id="FileKeysInput" name="FileKeysInput"/>
+  <input type="hidden" id="DownloadFiles" name="DownloadFiles" value=""/>
+
+  <input type="hidden" id="ClientTokenInput" name="ClientTokenInput" value="<?php echo $ClientToken; ?>"/>
+  <input type="hidden" id="UserIDInput" name="UserIDInput" value="<?php echo $UIDI; ?>"/>
+  <input type="hidden" id="PasswordIDInput" name="PasswordIDInput" value="<?php echo $PI; ?>"/>
+  <input type="hidden" id="Mode" name="Mode" value="<?php echo $MI; ?>"/>
+</form>
