@@ -1,5 +1,17 @@
 --------------------
 COMMIT 10/20/2019
+Justin Grimes - v0.8.2 - Working on UI.
+
+-v0.8.2.
+-Eventually I'll have to consider how to delete/cleanup files.
+-Working on all the different codepaths for if auth is required and user logged in/out and when auth is not required at all.
+-Created landing.php to handle this. Will probably have to modify the default redirects created so far as a result.
+-Need to test this in a VM tomorrow. It will be the first time I've tested actually executing any of this.
+-Fingers crossed for first execution!!! I fully expect and am prepared to be fixing/redesigning due to problems for 2+ days.
+--------------------
+
+--------------------
+COMMIT 10/20/2019
 Justin Grimes - v0.8 - Working on Upload/Download logic. Early UI development.
 
 -v0.8.

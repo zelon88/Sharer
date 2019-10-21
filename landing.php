@@ -31,19 +31,15 @@ if (isset($_SESSION['PasswordInput'])) $PI = $_SESSION['PasswordInput'];
 else $PI = 'UPLOAD';
 // / ----------------------------------------------------------------------------------
 
-?>
-<p>Click or drop files below to share them with specific people.</p>
-<form enctype="multipart/form-data" method="Post" action="ShareCore.php" id="UploadFiles" name="UploadFiles" class="dropzone">
-  <?php if ($AuthenticationRequired) { ?>
-    <p>If applicable, enter the usernames of users who should be allowed access to these files.</p>
-    <p>Separate multiple usernames with commas.</p>
-    <p>Leave blank to allow anyone with valid keys to access these files.</p>
-    <input type="text" id="ApprovedUserIDInput" name="ApprovedUserIDInput"/>
-  <?php } ?>
 
-  <input type="hidden" id="FileKeysInput" name="FileKeysInput" value="<?php echo $ClientToken; ?>"/>
-  <input type="hidden" id="ClientTokenInput" name="ClientTokenInput" value="<?php echo $ClientToken; ?>"/>
-  <input type="hidden" id="UserIDInput" name="UserIDInput" value="<?php echo $UIDI; ?>"/>
-  <input type="hidden" id="PasswordIDInput" name="PasswordIDInput" value="<?php echo $PI; ?>"/>
-  <input type="hidden" id="Mode" name="Mode" value="DOWNLOAD"/>
-</form>
+if ($AuthenticationRequired) { 
+  if ($_SESSION['UserIDInput'] == '' or !isset($_SESSION['UserIDInput']) or $_SESSION['PasswordInput'] == '' or !isset($_SESSION['PasswordInput'])) { 
+
+  }
+}
+else { 
+
+}
+
+
+?>

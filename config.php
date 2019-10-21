@@ -25,7 +25,7 @@ If you lose this file you will be unable to decode session ID's and file keys la
 // / ----------------------------------------------------------------------------------
 // / The version of this application. Must be a string.
 // / Must be a string surrounded with single quotes.
-$ShareVersion = 'v0.8';
+$ShareVersion = 'v0.8.2';
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------

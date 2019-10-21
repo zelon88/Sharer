@@ -358,7 +358,7 @@ function upload($files, $fileKeys, $userIDs) {
     // / Sanitize the input file for security.
     $file = Sanitize($file, FALSE);
     $fileKey = Sanitize($fileKeys[$key], TRUE);
-    // / If $AuthenticationRequired is set to TRUE in config.php the $AllowedUsers array from the KEYS file is prepared.
+    // / If $AuthenticationRequired is set to TRUE in config.php the $ApprovedUsers array from the KEYS file is prepared.
     if ($AuthenticationRequired) { 
       // / $userIDs[$key] needs to be an array (but it's probably a sting).
       // / $userIDs[$key] is an array of UserIDs that can access the currently selected file.
@@ -366,8 +366,8 @@ function upload($files, $fileKeys, $userIDs) {
       if (!is_array($userIDs[$key])) $userIDs[$key] = array($userIDs[$key]);
       // / $userID is a handle for $userIDs[$key][$uKey]. It is a single user of the selected file.
       foreach ($userIDs[$key] as $uKey=>$userID) $userIDs[$key][$uKey] = int(Sanitize($userID, TRUE)); }
-    // / If $AuthenticationRequired is set to FALSE in config.php we ignore the $userIDs argument and substitute UserID 0 (Anonymous).
-    else $userIDs = 0;
+    // / If $AuthenticationRequired is set to FALSE in config.php we ignore the $userIDs argument and substitute a blank UserID (Anonymous).
+    else $userIDs = '';
     // / Perform a sanity check on the input file.
     if ($file == '.' or $file == '..' or strpos($file, '.php') !== FALSE or strpos($file, '.js') !== FALSE or strpos($file, '.html') !== FALSE) continue;
     // / Remove duplicate directory separators.
@@ -421,7 +421,7 @@ function download($files, $fileKeys, $userID) {
   // / Iterate through the supplied array of files.
   foreach ($files as $key=>$file) {
     // / Reset variables for this iteration of the loop.
-    $AllowedUsers = array();
+    $ApprovedUsers = array();
     $url = '';
     // / Sanitize the input file for security.
     $file = Sanitize($file, FALSE);
@@ -437,10 +437,14 @@ function download($files, $fileKeys, $userID) {
       // / If a key file exists for the selected file, we load it into memory to retrieve permission settings and keys.
       require($fileDataPath);
       // / If the $AuthenticationRequired is set to TRUE in config.php we check that the current user has permission to view the selected file.
-      if ($AuthenticationRequired) if (!in_array($userID, $AllowedUsers)) { 
-        $permsCheck = FALSE;
-        // / If the user lacks permissions to view any of their selected files the loop will terminate and cleanup operations will begin.
-        break; } 
+      // / Also validate the $ApprovedUsers array and make sure it is not empty.
+      if ($AuthenticationRequired) if (!in_array($userID, $ApprovedUsers) && $ApprovedUsers) { 
+        // / If the $ApprovedUsers array starts with an empty or 0 entry it means the file is approved for anonymous download. 
+        // / Anonymous download means we skip tripping the $permsCheck variable to FALSE.
+        if ($ApprovedUsers[0] != '' && $ApprovedUsers[0] != 0) { 
+          $permsCheck = FALSE;
+          // / If the user lacks permissions to view any of their selected files the loop will terminate and cleanup operations will begin.
+          break; } } 
       // / Craft a relative URL for the selected file and add it to an array that we can return later.
       $url = str_replace($dsds, $ds, 'Temp'.$ds.$fileKey.$ds.$file);
       $DownloadURLs = array_push($DownloadURLs, $url);
@@ -547,7 +551,6 @@ if (phpCheck() && osCheck() && loadConfig()) {
     require('header.php');
     if ($Mode == 'UPLOAD') require('upload.php'); 
     if ($Mode == 'DOWNLOAD') require('download.php');
-    require('footer.php');
-
-} }
+    if ($Mode == '') require('landing.php')
+    require('footer.php'); } }
 // / ----------------------------------------------------------------------------------
