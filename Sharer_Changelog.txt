@@ -1,4 +1,15 @@
 --------------------
+COMMIT 10/22/2019
+Justin Grime - v0.8.3 - First execution! Fixing syntax errors.
+
+-v0.8.3.
+-Fixing syntax errors.
+-Trying to see which components need more work.
+-Currently produces an error "ERROR!!! 3, DATETIME, Could not verify installation!"
+-Somewhere in verifyInstallation() there is a bug. It must be after the directories are created. After cache files are created. After indecies are copied. 
+--------------------
+
+--------------------
 COMMIT 10/20/2019
 Justin Grimes - v0.8.2 - Working on UI.
 

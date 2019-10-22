@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/20/2019
+Date: 10/22/2019
 <3 Open-Source
 
 This is the primary Core file for the Sharer Web Application. 
@@ -74,11 +74,13 @@ function osCheck() {
 // / Make sure there is a session started and load the configuration file.
 // / Also kill the application if $MaintenanceMode is set to  TRUE.
 function loadConfig() { 
+  global $ShareVersion, $ApplicationName, $Verbose, $DeleteThreshold, $MaintenanceMode, $AuthenticationRequired, $AllowUsers, $Salts, $EncryptionType, $VirusScan, $ThoroughAV, $Users, $ShareLoc, $InstLoc, $TempLoc;
   if (session_status() == PHP_SESSION_NONE) session_start();
   // / Check that config.php exists and load it if it does.
   if (!file_exists('config.php')) $ConfigIsLoaded = FALSE; 
-  else require_once ('config.php'); 
-  $ConfigIsLoaded = TRUE; 
+  else { 
+    require_once ('config.php'); 
+    $ConfigIsLoaded = TRUE; } 
   if ($MaintenanceMode === TRUE) die('The requested application is currently unavailable due to maintenance.'.PHP_EOL); 
   return ($ConfigIsLoaded); }
 // / ----------------------------------------------------------------------------------
@@ -108,7 +110,7 @@ function verifyDate() {
   // / Set variables. Create an accurate human-readable date from the servers timezone.
   $Date = date("m-d-y");
   $Time = date("F j, Y, g:i a"); 
-  $Minute = int(date('i'));
+  $Minute = (int)date('i');
   $LastMinute = $Minute - 1;
   // / We need to accomodate the off-chance that execution spans multiple days. 
   // / In other words, the application starts at 11:59am and ends at 12:00am.
@@ -121,20 +123,21 @@ function verifyDate() {
 // / A function to generate and validate the operational environment for the Diablo Engine.
 function verifyInstallation() { 
   // / Set variables. 
-  global $Date, $Time, $Salts, $EncryptionType;
-  $dirCheck = $indexCheck = $dirExists = $indexExists = $logCheck = $cacheCheck = $shareLocCheck = TRUE;
+  global $Date, $Time, $Salts, $EncryptionType, $ShareLoc, $ApplicationName;
+  $dirCheck = $indexCheck = $dirExists = $indexExists = $logCheck = $cacheCheck = $shareLocCheck = $logDirCheck = TRUE;
   $requiredDirs = array('Logs', 'Cache', 'Temp');
   $InstallationIsVerified = FALSE;
   // / For servers with unprotected directory roots, we must verify (at minimum) that a local index file exists to catch unwanted traversal.
   if (!file_exists('index.html')) $indexCheck = FALSE;
   // / Iterate through the $requiredDirs hard-coded (in this function, under "Set variables" section above).
   foreach ($requiredDirs as $requiredDir) {
+    $requiredDir = dirname(__FILE__).DIRECTORY_SEPARATOR.$requiredDir;
     // / If a $requiredDir doesn't exist, we create it.
-    if (!is_dir($requiredDir)) $dirExists = mkdir($requiredDir, 0755);
+    if (!is_dir($requiredDir)) $dirExists = @mkdir($requiredDir, 0755);
     // / A sanity check to ensure the directory was actually created.
     if (!$dirExists) $dirCheck = FALSE;
     // / Copy an index file into the newly created directory to enable directory root protection the old fashioned way.
-    if (!file_exists($requiredDir.DIRECTORY_SEPARATOR.'index.html')) $indexExists = copy('index.html', $requiredDir.DIRECTORY_SEPARATOR.'index.html');
+    if (!file_exists($requiredDir.DIRECTORY_SEPARATOR.'index.html')) $indexExists = @copy('index.html', $requiredDir.DIRECTORY_SEPARATOR.'index.html');
     // / A sanity check to ensure that an index file was created in the newly created directory.
     if (!$indexExists) $indexCheck = FALSE; }
   // / Check that the $ShareLoc exists.
@@ -145,7 +148,7 @@ function verifyInstallation() {
   $logDir = 'Logs'.DIRECTORY_SEPARATOR.$Date.DIRECTORY_SEPARATOR;
   if (!is_dir($logDir)) $logDirCheck = @mkdir($logDir);
   $LogFile = $logDir.$ApplicationName.'_'.$logHash.'.log';
-  $VirusLogFile = $logDir.'_'$ApplicationName.'_ClamAV'.$logHash.'.log';
+  $VirusLogFile = $logDir.'_'.$ApplicationName.'_ClamAV'.$logHash.'.log';
   // / Create today's $LogFile if it doesn't exist yet.
   if (!file_exists($LogFile)) $logCheck = file_put_contents($LogFile, 'OP-Act: '.$Time.' Created a log file, "'.$LogFile.'".');
   // / Create a unique identifier for the cache file.
@@ -211,18 +214,18 @@ function verifyGlobals() {
   $saniString = '|\\/~#[](){};:$!#^&%@>*<"\'';
   // / Set authentication credentials from supplied inputs when inputs are supplied.
   if (isset($_POST['UserInput']) && isset($_POST['PasswordInput']) && isset($_POST['ClientTokenInput'])) { 
-    $_SESSION['UserInput'] = $UserInput = str_replace(str_split($saniString), ' ', $_POST['UserInput']), ENT_QUOTES, 'UTF-8');
-    $_SESSION['PasswordInput'] = $PasswordInput = str_replace(str_split($saniString), ' ', $_POST['PasswordInput']), ENT_QUOTES, 'UTF-8'); 
-    $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash($EncryptionType, $_POST['ClientTokenInput']), ENT_QUOTES, 'UTF-8');
-    $_SESSION['Mode'] = $Mode = str_replace(str_split($saniString), ' ', $_POST['Mode']), ENT_QUOTES, 'UTF-8'); 
-    $_SESSION['FileKeysInput'] = $FileKeysInput = str_replace(str_split($saniString), ' ', $_POST['FileKeysInput']), ENT_QUOTES, 'UTF-8');
-    $_SESSION['ApprovedUserIDInput'] = $ApprovedUserIDInput = str_replace(str_split($saniString), ' ', $_POST['ApprovedUserIDInput']), ENT_QUOTES, 'UTF-8'); }
+    $_SESSION['UserInput'] = $UserInput = str_replace(str_split($saniString), '', $_POST['UserInput']);
+    $_SESSION['PasswordInput'] = $PasswordInput = str_replace(str_split($saniString), '', $_POST['PasswordInput']); 
+    $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash($EncryptionType, $_POST['ClientTokenInput']);
+    $_SESSION['Mode'] = $Mode = str_replace(str_split($saniString), '', $_POST['Mode']); 
+    $_SESSION['FileKeysInput'] = $FileKeysInput = str_replace(str_split($saniString), '', $_POST['FileKeysInput']);
+    $_SESSION['ApprovedUserIDInput'] = $ApprovedUserIDInput = str_replace(str_split($saniString), '', $_POST['ApprovedUserIDInput']); }
   // / Detect if required variables are set.
   $GlobalsAreVerified = TRUE;
   // / Clean up unneeded memory.
   $saniString = NULL;
   unset($saniString);
-  return($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $FileKeys, $GlobalsAreVerified); }
+  return(array($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $FileKeys, $GlobalsAreVerified)); }
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -327,7 +330,7 @@ function VirusScan($file) {
   // / Prepend the findings with "FOUND" so we have something easy to search for later to quantify results. 
   shell_exec(str_replace('  ', ' ', str_replace('  ', ' ', 'clamscan -r '.$ThoroughAV.' '.$file.' | grep FOUND >> '.$VirusLogFile)));
   // / Check that a logfile was created and read it if possible.
-  if (file_exists($VirusLogFile);) { 
+  if (file_exists($VirusLogFile)) { 
     $logFileDATA = @file_get_contents($VirusLogFile);
     // / Look for IoC in the logfile. Trigger the check TRUE or FALSE as needed.
     if ($strpos($logFileDATA, 'FOUND') !== FALSE) $virusCheck = FALSE; 
@@ -335,7 +338,7 @@ function VirusScan($file) {
   // / Free un-needed memory.
   $virusCheck = NULL;
   unset($virusCheck);
-  return ($virusCheck);
+  return ($virusCheck); }
 // / ----------------------------------------------------------------------------------
 
 // / -----------------------------------------------------------------------------------
@@ -380,7 +383,7 @@ function upload($files, $fileKeys, $userIDs) {
     $keysData = '<?php $ApprovedUsers = array('.implode(','.$userIDs).');';
     $keysFileCheck = @file_put_contents($fileDataPath, $keysData);
     // / Copy the uploaded file to the $filePath (in the $ShareLoc).
-    $fileCheck = @copy($files['tmp_name'][$key], $filePath); }
+    $fileCheck = @copy($files['tmp_name'][$key], $filePath); 
     // / If $VirusScan is set to TRUE in config.php we check the $filePath with ClamAV.
     // / ClamAV is required for virus scanning!
     if ($VirusScan) {
@@ -392,7 +395,7 @@ function upload($files, $fileKeys, $userIDs) {
         $DownloadURLs = array(); 
         break; } } 
     // / Check that no errors have been triggered.
-    if ($virusCheck && $fileCheck && $keysFileCheck && file_exists($filePath)) $UploadSuccess = TRUE; 
+    if ($virusCheck && $fileCheck && $keysFileCheck && file_exists($filePath)) $UploadSuccess = TRUE; }
   // / Free un-needed memory.
   $txt = $file = $F0 = $F2 = $F3 = $ClamLogFileDATA = $Upload = $MAKELogFile = NULL;
   unset($txt, $file, $F0, $F2, $F3, $ClamLogFileDATA, $Upload, $MAKELogFile); 
@@ -500,28 +503,30 @@ if (phpCheck() && osCheck() && loadConfig()) {
   // / This code loads & sanitizes the global cache & prepares the user list.
   list ($Users, $CacheIsLoaded) = loadCache();
   if (!$CacheIsLoaded) dieGracefully(4, 'Could not load cache file!');
-  else if ($Verbose) logEntry('Loaded cache file.');
+  else if ($Verbose) logEntry('Loaded cache file.'); 
  
   // / When the $AuthenticationRequired variable is set to TRUE in config.php this code block is run to authenticate the user.
   if ($AuthenticationRequired) { 
     // / This code takes in all required inputs to build a session and ensures they exist & are a valid type.
     // / Also displays the login page when the user is not logged in.
     list ($UserInput, $PasswordInput, $ClientTokenInput, $Mode, $FileKeysInput, $GlobalsAreVerified) = verifyGlobals();
-    if (!$GlobalsAreVerified) requireLogin(); dieGracefully(5, 'User is not logged in!');
+    if (!$GlobalsAreVerified) { 
+      requireLogin(); 
+      dieGracefully(5, 'User is not logged in!'); }
     else if ($Verbose) logEntry('Verified global variables.');
 
     // / This code ensures that a same-origin UI element generated the login request.
     // / Also protects against packet replay attacks by ensuring that the request was generated recently and by making each request unique. 
     list ($ClientToken, $ServerToken, $TokensAreVerified) = generateTokens($ClientTokenInput, $PasswordInput);
     if (!$TokensAreValid) dieGracefully(6, 'Invalid tokens!');
-    else if ($Verbose) logEntry('Generated tokens.');
+    else if ($Verbose) logEntry('Generated tokens.'); 
 
     // / This code validates credentials supplied by the user against the hashed ones stored on the server.
     // / Also removes the $Users user list from memory so it can not be leaked.
     // / Displays a login screen when authentication fails and kills the application. 
     list ($UserID, $UserName, $UserEmail, $PasswordIsCorrect, $UserIsAdmin, $AuthIsComplete) = authenticate($UserInput, $PasswordInput, $ClientToken, $ServerToken);
     if (!$PasswordIsCorrect or !$AuthIsComplete) dieGracefully(7, 'Invalid username or password!'); 
-    else if ($Verbose) logEntry('Authenticated '.$UserName.', '.$UserID.'.'); }
+    else if ($Verbose) logEntry('Authenticated '.$UserName.', '.$UserID.'.'); } 
   
   // / When the $AuthenticationRequired variable is set to FALSE in config.php this code block is run, bypassing authentication.
   if (!$AuthenticationRequired) { 
@@ -530,7 +535,7 @@ if (phpCheck() && osCheck() && loadConfig()) {
     $UserID = 0;
     $UserName = 'Anonymous';
     $UserEmail = 'Anonymous@anon.net';
-    $UserIsAdmin = FALSE; }
+    $UserIsAdmin = FALSE; } 
 
   // / If a Download operation is required we don't output a UI. Instead we ouput the download URL's for the requested files.
   if ($DownloadRequired or $UploadRequired) { 
@@ -543,7 +548,7 @@ if (phpCheck() && osCheck() && loadConfig()) {
     if ($UploadRequired) { 
       list ($DownloadURLs, $UploadSuccess) = upload($_POST['UploadFiles'], $FileKeysInput, $ApprovedUserIDInput); }
       if (!$UploadSuccess) dieGracefully(8, 'Upload Error!');
-      else if ($Verbose) logEntry('Upload Complete.'); }
+      else if ($Verbose) logEntry('Upload Complete.'); } 
 
   // / If there are no file operations to perform we prepare a dynamic HTML UI for the user.
   else { 
@@ -551,6 +556,6 @@ if (phpCheck() && osCheck() && loadConfig()) {
     require('header.php');
     if ($Mode == 'UPLOAD') require('upload.php'); 
     if ($Mode == 'DOWNLOAD') require('download.php');
-    if ($Mode == '') require('landing.php')
+    if ($Mode == '') require('landing.php');
     require('footer.php'); } }
 // / ----------------------------------------------------------------------------------

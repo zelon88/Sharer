@@ -8,7 +8,7 @@ Licensed Under GNU GPLv3
 https://www.gnu.org/licenses/gpl-3.0.html
 
 Author: Justin Grimes
-Date: 10/20/2019
+Date: 10/22/2019
 <3 Open-Source
 
 This is the configuration file for the Sharer Web Application. 
@@ -25,7 +25,7 @@ If you lose this file you will be unable to decode session ID's and file keys la
 // / ----------------------------------------------------------------------------------
 // / The version of this application. Must be a string.
 // / Must be a string surrounded with single quotes.
-$ShareVersion = 'v0.8.2';
+$ShareVersion = 'v0.8.3'; 
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -104,10 +104,10 @@ $ThoroughAV = TRUE;
 // / Arrays are formatted as  $Users['USER_ID', 'USER_NAME', 'USER_EMAIL', 'HASHED_PASSWORD', "ADMIN_YES/NO(bool)", "LAST_SESION_ID"]
 $Users = array(
  array('1', 'zelon88', 'test@gmail.com', 'testpassword', "TRUE"),
- array('2', 'Nikki', 'test@gmail.com', 'password', "FALSE") 
- array('3', 'Leo', 'test@gmail.com', 'password', "FALSE") 
- array('4', 'Ralph', 'test@gmail.com', 'password', "FALSE") 
- array('5', 'Mikey', 'test@gmail.com', 'password', "FALSE") 
+ array('2', 'Nikki', 'test@gmail.com', 'password', "FALSE"), 
+ array('3', 'Leo', 'test@gmail.com', 'password', "FALSE"), 
+ array('4', 'Ralph', 'test@gmail.com', 'password', "FALSE"), 
+ array('5', 'Mikey', 'test@gmail.com', 'password', "FALSE"),
  array('6', 'Donny', 'test@gmail.com', 'these-are-all-fake-passwords', "FALSE") );
 // / ----------------------------------------------------------------------------------
 
