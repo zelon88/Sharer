@@ -1,5 +1,22 @@
 --------------------
 COMMIT 10/22/2019
+Justin Grime - v0.8.4 - First execution! Fixing syntax errors.
+
+-v0.8.4.
+-Fixing more syntax errors.
+-The problem with verifyInstallation was actually not a problem in verifyInstallation. It was no /ShareLoc folder existing on my VM! The error was telling me something useful and accurate!
+-Currently produces an error "ERROR!!! 7, DATETIME, Invalid username or password!"
+-Now I can work on some UI elements to submit some user input to the core and continue testing core functions.
+-$AuthenticationRequired config entry works.
+-$MaintanenceMode config entry works.
+-No errors produced when run without POSTS. So far so good.
+-Loads landing.php.
+-Had to re-order the dynamic UI builder at the bottom of ShareCore.php.
+-Had to move verifyGlobals() function to outside the authenticationRequired condition. It's variables & sanitization are needed even when we don't authenticate the user.
+--------------------
+
+--------------------
+COMMIT 10/22/2019
 Justin Grime - v0.8.3 - First execution! Fixing syntax errors.
 
 -v0.8.3.

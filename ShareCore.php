@@ -42,7 +42,7 @@ set_time_limit(0);
 function opCheck() { 
   $DownloadRequired = $UploadRequired = FALSE;
   $Doctype = '<!DOCTYPE HTML><HTML>';
-  if (isset($_POST['DownloadloadFiles'])) $Doctype = ''; $DownloadRequired = TRUE;
+  if (isset($_POST['DownloadFiles'])) $Doctype = ''; $DownloadRequired = TRUE;
   if (isset($_POST['UploadFiles'])) $Doctype = ''; $UploadRequired = TRUE;
   return (array($Doctype, $DownloadRequired, $UploadRequired)); }
 // / ----------------------------------------------------------------------------------
@@ -210,16 +210,16 @@ function loadCache() {
 function verifyGlobals() { 
   // / Set variables. 
   global $Salts, $EncryptionType;
-  $GlobalsAreVerified = FALSE;
+  $UserInput = $PasswordInput = $ClientTokenInput = $Mode = $FileKeys = $GlobalsAreVerified = FALSE;
   $saniString = '|\\/~#[](){};:$!#^&%@>*<"\'';
   // / Set authentication credentials from supplied inputs when inputs are supplied.
   if (isset($_POST['UserInput']) && isset($_POST['PasswordInput']) && isset($_POST['ClientTokenInput'])) { 
-    $_SESSION['UserInput'] = $UserInput = str_replace(str_split($saniString), '', $_POST['UserInput']);
-    $_SESSION['PasswordInput'] = $PasswordInput = str_replace(str_split($saniString), '', $_POST['PasswordInput']); 
-    $_SESSION['ClientTokenInput'] = $ClientTokenInput = hash($EncryptionType, $_POST['ClientTokenInput']);
-    $_SESSION['Mode'] = $Mode = str_replace(str_split($saniString), '', $_POST['Mode']); 
-    $_SESSION['FileKeysInput'] = $FileKeysInput = str_replace(str_split($saniString), '', $_POST['FileKeysInput']);
-    $_SESSION['ApprovedUserIDInput'] = $ApprovedUserIDInput = str_replace(str_split($saniString), '', $_POST['ApprovedUserIDInput']); }
+    $UserInput = $_SESSION['UserInput'] = str_replace(str_split($saniString), '', $_POST['UserInput']);
+    $PasswordInput = $_SESSION['PasswordInput'] = str_replace(str_split($saniString), '', $_POST['PasswordInput']); 
+    $ClientTokenInput = $_SESSION['ClientTokenInput'] = hash($EncryptionType, $_POST['ClientTokenInput']);
+    $Mode = $_SESSION['Mode'] = str_replace(str_split($saniString), '', $_POST['Mode']); 
+    $FileKeysInput = $_SESSION['FileKeysInput'] = str_replace(str_split($saniString), '', $_POST['FileKeysInput']);
+    $ApprovedUserIDInput = $_SESSION['ApprovedUserIDInput'] = str_replace(str_split($saniString), '', $_POST['ApprovedUserIDInput']); }
   // / Detect if required variables are set.
   $GlobalsAreVerified = TRUE;
   // / Clean up unneeded memory.
@@ -244,13 +244,13 @@ function requireLogin() {
 // / But no lock is pick proof, especially ones that come with instructions for picking them.
 function generateTokens($ClientTokenInput, $PasswordInput) { 
   // / Set variables. 
-  global $Minute, $LastMinute, $EncryptionType;
+  global $Minute, $Salts, $LastMinute, $EncryptionType;
   $ServerToken = $ClientToken = NULL;
   $TokensAreValid = FALSE;
   $ServerToken = hash($EncryptionType, $Minute.$Salts[1].$Salts[3]);
   $ClientToken = hash($EncryptionType, $Minute.$PasswordInput); 
   $oldServerToken = hash($EncryptionType, $LastMinute.$Salts[1].$Salts[3]);
-  $oldCLientToken = hash($EncryptionType, $LastMinute.$PasswordInput);
+  $oldClientToken = hash($EncryptionType, $LastMinute.$PasswordInput);
   if ($ClientTokenInput === $oldClientToken) {
     $ClientToken = $oldClientToken;
     $ServerToken = $oldServerToken; }
@@ -267,7 +267,7 @@ function authenticate($UserInput, $PasswordInput, $ServerToken, $ClientToken) {
   // / Set variables. Note that we try not to include anything here we don't have to because
   // / It's going to be hammered by someone, somewhere, eventually. Less is more in terms of code & security.
   global $Users, $EncryptionType;
-  $UserID = $UserName = $PasswordIsCorrect = $UserIsAdmin = $AuthIsComplete = FALSE;
+  $UserID = $UserName = $PasswordIsCorrect = $UserEmail = $UserIsAdmin = $AuthIsComplete = FALSE;
   // / Iterate through each defined user.
   foreach ($Users as $User) { 
     $UserID = $User[0];
@@ -280,6 +280,7 @@ function authenticate($UserInput, $PasswordInput, $ServerToken, $ClientToken) {
         // / Here we grant the user their designated permissions and only then decide $AuthIsComplete.
         if (is_bool($User[4])) {
           $UserIsAdmin = $User[4]; 
+          $UserEmail = $User[2];
           $AuthIsComplete = TRUE; 
           // / Once we authenticate a user we no longer need to continue iterating through the userlist, so we stop.
           break; } } } }
@@ -322,7 +323,7 @@ function cleanFolders($dTarget, $DeleteThreshold) {
 // / ----------------------------------------------------------------------------------
 // / A function to scan a supplied file for viruses with ClamAV using settings obtained from config.php.
 // / Requires ClamAV to be installed on the server.
-function VirusScan($file) { 
+function virusScan($file) { 
   // / Set variables. Initialize check to FALSE.
   global $ThoroughAV, $VirusLogFile;
   $virusCheck = FALSE;
@@ -387,7 +388,7 @@ function upload($files, $fileKeys, $userIDs) {
     // / If $VirusScan is set to TRUE in config.php we check the $filePath with ClamAV.
     // / ClamAV is required for virus scanning!
     if ($VirusScan) {
-      $virusCheck = VirusScan($file);
+      $virusCheck = virusScan($file);
       // / If viruses were found we delete all files that were created and stop processing the request.
       if (!$virusCheck) {
         @unlink($filePath);
@@ -517,7 +518,7 @@ if (phpCheck() && osCheck() && loadConfig()) {
 
     // / This code ensures that a same-origin UI element generated the login request.
     // / Also protects against packet replay attacks by ensuring that the request was generated recently and by making each request unique. 
-    list ($ClientToken, $ServerToken, $TokensAreVerified) = generateTokens($ClientTokenInput, $PasswordInput);
+    list ($ClientToken, $ServerToken, $TokensAreValid) = generateTokens($ClientTokenInput, $PasswordInput);
     if (!$TokensAreValid) dieGracefully(6, 'Invalid tokens!');
     else if ($Verbose) logEntry('Generated tokens.'); 
 
@@ -530,15 +531,15 @@ if (phpCheck() && osCheck() && loadConfig()) {
   
   // / When the $AuthenticationRequired variable is set to FALSE in config.php this code block is run, bypassing authentication.
   if (!$AuthenticationRequired) { 
-    $ClientToken = hash($EncryptionType, rand(10000000000).rand(10000000000));
-    $ServerToken = hash($EncryptionType, rand(10000000000).rand(10000000000));
+    $ClientToken = hash($EncryptionType, rand(10000000000,1000000000000).rand(10000000000,1000000000000));
+    $ServerToken = hash($EncryptionType, rand(10000000000,1000000000000).rand(10000000000,1000000000000));
     $UserID = 0;
     $UserName = 'Anonymous';
     $UserEmail = 'Anonymous@anon.net';
     $UserIsAdmin = FALSE; } 
 
   // / If a Download operation is required we don't output a UI. Instead we ouput the download URL's for the requested files.
-  if ($DownloadRequired or $UploadRequired) { 
+  if (isset($_POST['Downloadfiles']) or isset($_POST['UploadFiles'])) { 
     if ($DownloadRequired) { 
       list ($DownloadURLs, $DownloadSuccess) = download($_POST['DownloadFiles'], $FileKeysInput, $UserID);
       if (!$DownloadSuccess) dieGracefully(7, 'Download Error!');
@@ -554,8 +555,10 @@ if (phpCheck() && osCheck() && loadConfig()) {
   else { 
     // / Dynamically build the UI depending on which functionality is desired.
     require('header.php');
-    if ($Mode == 'UPLOAD') require('upload.php'); 
-    if ($Mode == 'DOWNLOAD') require('download.php');
-    if ($Mode == '') require('landing.php');
+    if (!isset($Mode)) require('landing.php');
+    else { 
+      if ($Mode == 'UPLOAD') require('upload.php'); 
+      if ($Mode == 'DOWNLOAD') require('download.php');
+    }
     require('footer.php'); } }
 // / ----------------------------------------------------------------------------------

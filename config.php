@@ -25,7 +25,7 @@ If you lose this file you will be unable to decode session ID's and file keys la
 // / ----------------------------------------------------------------------------------
 // / The version of this application. Must be a string.
 // / Must be a string surrounded with single quotes.
-$ShareVersion = 'v0.8.3'; 
+$ShareVersion = 'v0.8.4'; 
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ $DeleteThreshold = 30;
 // / A setting to enable or diable "Maintenance Mode" for temporarily disabling the application.
 // / Set to "TRUE" to prevent this application from running.
 // / Set to "FALSE" to allow this application to run.
-$MaintenanceMode = FALSE;
+$MaintenanceMode = TRUE;
 // / ----------------------------------------------------------------------------------
 
 // / ----------------------------------------------------------------------------------
